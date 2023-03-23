@@ -10,6 +10,10 @@
 /**
  * 
  */
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnSearchResult, FString, roomName, int32, currentPlayers, int32, maxPlayers, int32, ping);
+
+
 UCLASS()
 class NETWORKPROJECT_API UServerGameInstance : public UGameInstance
 {
@@ -18,16 +22,27 @@ class NETWORKPROJECT_API UServerGameInstance : public UGameInstance
 public:
 	UServerGameInstance();
 	virtual void Init() override;
-	// Àü¿ªº¯¼ö
+	
+	// ì „ì—­ë³€ìˆ˜
 	IOnlineSessionPtr sessionInterface;
 	FName sessionID;
-
-	// ÇÔ¼ö
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
+	FOnSearchResult SearchResultDele;
+	
+	// í•¨ìˆ˜
 	void CreateMySession(FString roomName, int32 playerCount);
+	void FindMySession();
 
 	UFUNCTION()
 	void OnCreateSessionComplete(FName sessionName,bool bisSuccess);
+
+	UFUNCTION()
+	void OnFindSessionComplete(bool bWasSuccessful);
+	
+	
 };
+
+
 
 
 

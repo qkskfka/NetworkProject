@@ -2,59 +2,116 @@
 
 
 #include "NetworkProject/Public/ServerGameInstance.h"
+
+#include "LoginWidget.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
-//»ı¼ºÀÚ
+#include "Kismet/GameplayStatics.h"
+//ìƒì„±ì
 
 UServerGameInstance::UServerGameInstance()
 {
 	sessionID = "Test Session";
 }
-//ÃÖÃÊ ½ÇÇàµÇ´Â ÇÔ¼ö
+//ìµœì´ˆ ì‹¤í–‰ë˜ëŠ” í•¨ìˆ˜
 void UServerGameInstance::Init()
 {
 	Super::Init();
-	// ¼¼¼ÇÀ» ½ÇÇàÇÑ´Ù.
-	// ¿Â¶óÀÎ ¼¼¼Ç ±â´ÉÀÌ ±¸ÇöµÇ¾î ÀÖ´Â IOnlineSubsystem Å¬·¡½º¸¦ °¡Á®¿Â´Ù.
+	// ì„¸ì…˜ì„ ì‹¤í–‰í•œë‹¤.
+	// ì˜¨ë¼ì¸ ì„¸ì…˜ ê¸°ëŠ¥ì´ êµ¬í˜„ë˜ì–´ ìˆëŠ” IOnlineSubsystem í´ë˜ìŠ¤ë¥¼ ê°€ì ¸ì˜¨ë‹¤.
 	IOnlineSubsystem* subsys = IOnlineSubsystem::Get();
 	if (subsys)
 	{
 		sessionInterface = subsys->GetSessionInterface();
+		
 		if(sessionInterface != nullptr)
 		{
 			sessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this,&UServerGameInstance::OnCreateSessionComplete);
+			sessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UServerGameInstance::OnFindSessionComplete);
 		}
 	}
 }
 
-// ¼¼¼Ç »ı¼º ÇÔ¼ö
+// ì„¸ì…˜ ìƒì„± í•¨ìˆ˜
 void UServerGameInstance::CreateMySession(FString roomName, int32 playerCount)
 {
 	if(sessionInterface != nullptr)
 	{
-		// ¼¼¼Ç »ı¼º Á¤º¸¸¦ ¸¸µç´Ù.
+		// ì„¸ì…˜ ìƒì„± ì •ë³´ë¥¼ ë§Œë“ ë‹¤.
 		FOnlineSessionSettings sessionSettings;
 		sessionSettings.bAllowInvites = false;
 		sessionSettings.bAllowJoinInProgress = true;
 		sessionSettings.bAllowJoinViaPresence = true;
 		sessionSettings.bIsDedicated = false;
 		sessionSettings.bShouldAdvertise = true;
-		// ¿Â¶óÀÎ ¼­ºê½Ã½ºÅÛÀÇ ÀÌ¸§ÀÌ "NULL"ÀÌ¸é LAN¸ÅÄªÀ» ÇÏ°í, "SteamÀÌ¸é ½ºÆÀ¼­¹ö·Î ¸ÅÄª
+		// ì˜¨ë¼ì¸ ì„œë¸Œì‹œìŠ¤í…œì˜ ì´ë¦„ì´ "NULL"ì´ë©´ LANë§¤ì¹­ì„ í•˜ê³ , "Steamì´ë©´ ìŠ¤íŒ€ì„œë²„ë¡œ ë§¤ì¹­
 		sessionSettings.bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName()=="NULL";
-		sessionSettings.NumPublicConnections = 3;
-		sessionSettings.Set(FName("KEY_RoomName"), roomName);
+		sessionSettings.NumPublicConnections = playerCount;
+		sessionSettings.Set(FName("KEY_RoomName"), roomName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 		
 
-		//¼¼¼ÇÀ» »ı¼ºÇÑ´Ù.
+		//ì„¸ì…˜ì„ ìƒì„±í•œë‹¤.
 		sessionInterface->CreateSession(0, sessionID, sessionSettings);
 
 		UE_LOG(LogTemp, Warning, TEXT(" Create Session try!"));
 	}
 }
 
-// ¼¼¼ÇÀÌ ¼­¹ö¿¡ ¸¸µé¾îÁ³À» ¶§ È£ÃâµÈ ÇÔ¼ö
+	//ë§Œë“¤ì–´ì ¸ ìˆëŠ” ì„¸ì…˜ì„ ì°¾ëŠ”í•¨ìˆ˜.
+void UServerGameInstance::FindMySession()
+{
+	//ì°¾ìœ¼ë ¤ëŠ” ì„¸ì…˜ ì¿¼ë¦¬ë¥¼ ìƒì„±í•œë‹¤.
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+
+	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NUL";
+	SessionSearch->MaxSearchResults = 30;
+	//íŠ¹ì • í‚¤ë¡œ ê²€ìƒ‰ ì¡°ê±´ì„ í•„í„°ë§í•˜ê³  ì‹¶ì„ë•Œ ì¶”ê°€í•˜ëŠ” ì¿¼ë¦¬
+	//SessionSearch->QuerySettings.Set(SEARCH_KEYWORD,FTEXT(" roomName"),EOnlineComparisonOp::GreaterThanEquals);
+
+	// Presenceë¡œ ìƒì„±ëœ ì„¸ì…˜ì„ í•„í„°ë§í•˜ê³  ì‹¶ì„ë•Œ
+	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+	
+	// ì•ì—ì„œ ë§Œë“  ì¿¼ë¦¬ë¥¼ ì´ìš©í•´ì„œ ì„¸ì…˜ì„ ì°¾ëŠ”ë‹¤.
+	sessionInterface->FindSessions(0,  SessionSearch.ToSharedRef());
+}
+
+// ì„¸ì…˜ì´ ì„œë²„ì— ë§Œë“¤ì–´ì¡Œì„ ë•Œ í˜¸ì¶œëœ í•¨ìˆ˜
 void UServerGameInstance::OnCreateSessionComplete(FName sessionName, bool bisSuccess)
 {
 	FString result = bisSuccess ? TEXT("Create Session Success!") : TEXT("Create Session ");
 	UE_LOG(LogTemp, Warning, TEXT(" % s: % s"), *result,*sessionName.ToString());
+
+	// ì„¸ì…˜ ìƒì„±ì— ì„±ê³µí–ˆë‹¤ë©´, ì „íˆ¬ ë§µ ìª½ìœ¼ë¡œ ì„¸ì…˜ì— ì ‘ì†í•œ ëª¨ë“  ì¸ì›ì„ ì´ë™ì‹œí‚¨ë‹¤.
+	if (bisSuccess)
+	{
+		GetWorld()->ServerTravel("/Game/Maps/MainMap?Listen");
+	}
+	
+}
+// ì„¸ì…˜ ê²€ìƒ‰ì´ ëë‚¬ì„ë•Œ í˜¸ì¶œë  í•¨ìˆ˜
+void UServerGameInstance::OnFindSessionComplete(bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		TArray<FOnlineSessionSearchResult> searchResults = SessionSearch->SearchResults;
+		UE_LOG(LogTemp, Warning, TEXT("Find Session count: %d"), searchResults.Num());
+
+		//ê²€ìƒ‰ ê²°ê³¼ë“¤ì„ ëª¨ë‘ ìˆœíšŒí•œë‹¤.
+		for(int32 i = 0; i < searchResults.Num(); i++)
+		{
+			FString roomName;
+			searchResults[i].Session.SessionSettings.Get(FName("KEY_RoomName"),roomName);
+			int32 maxPlayers = searchResults[i].Session.SessionSettings.NumPublicConnections;
+			int32 currentPlayers = maxPlayers - searchResults[i].Session.NumOpenPublicConnections;
+			int32 ping = searchResults[i].PingInMs;
+
+			// ìŠ¬ë¡¯ ìƒì„±ì— í•„ìš”í•œ ì •ë³´ë¥¼ ì´ë²¤íŠ¸ë¡œ ì†¡ì¶œí•œë‹¤.
+			SearchResultDele.Broadcast(roomName, currentPlayers, maxPlayers, ping);
+		}
+		
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Find Sessions Failed..."));
+	}
 }

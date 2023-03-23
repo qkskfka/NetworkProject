@@ -2,35 +2,45 @@
 
 
 #include "LoginWidget.h"
-#include "LoginWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/EditableText.h"
 #include "Components/Slider.h"
 #include "Components/WidgetSwitcher.h"
+#include "Components/ScrollBox.h"
 #include "ServerGameInstance.h"
+#include "SessionSlotWidget.h"
 
 void ULoginWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	//È¤½Ã ¸ğ¸¦ ÀÔ·Â ÇÊµåÀÇ °ªÀ» ºó °°À¸·Î ÃÊ±âÈ­ ÇÑ´Ù.
+	//í˜¹ì‹œ ëª¨ë¥¼ ì…ë ¥ í•„ë“œì˜ ê°’ì„ ë¹ˆ ê°™ìœ¼ë¡œ ì´ˆê¸°í™” í•œë‹¤.
 	editText_id->SetText(FText::FromString(""));
 	editText_RoomName->SetText(FText::FromString(""));
 	sliderPlayerCount->SetValue(2.0f);
 	playerCount->SetText(FText::FromString("2"));
 
-	// ¹öÆ° Å¬¸¯ ÀÌº¥Æ®¿¡ ÇÔ¼ö ¹ÙÀÎµùÇÏ±â
+	// ë²„íŠ¼ í´ë¦­ ì´ë²¤íŠ¸ì— í•¨ìˆ˜ ë°”ì¸ë”©í•˜ê¸°
 	buttonStart->OnClicked.AddDynamic(this, &ULoginWidget::ClickStart);
 	buttonCreateSession->OnClicked.AddDynamic(this, &ULoginWidget::CreateServer);
 	sliderPlayerCount->OnValueChanged.AddDynamic(this, &ULoginWidget::OnMoveSlider);
-
+	btn_GoCreate->OnClicked.AddDynamic(this, &ULoginWidget::GoCreate);
+	btn_GoFind->OnClicked.AddDynamic(this, &ULoginWidget::GoFind);
+	btn_CreateBack->OnClicked.AddDynamic(this, &ULoginWidget::GoBack);
+	btn_FindBack->OnClicked.AddDynamic(this, &ULoginWidget::GoBack);
+	
 	gameInstance = Cast<UServerGameInstance>(GetGameInstance());
+
+	if (gameInstance != nullptr)
+	{
+		gameInstance->SearchResultDele.AddDynamic(this, &ULoginWidget::AddNewSlot);
+	}
 
 }
 
 void ULoginWidget::ClickStart()
 {
-	// ¸¸ÀÏ, ID°¡ ºó Ä­ÀÌ ¾Æ´Ï¶ó¸é 0¹ø-> 1¹ø Äµ¹ö½º·Î º¯°æÇÑ´Ù.
+	// ë§Œì¼, IDê°€ ë¹ˆ ì¹¸ì´ ì•„ë‹ˆë¼ë©´ 0ë²ˆ-> 1ë²ˆ ìº”ë²„ìŠ¤ë¡œ ë³€ê²½í•œë‹¤.
 	if (!editText_id->GetText().IsEmpty())
 	{
 		WidgetSwitcher->SetActiveWidgetIndex(1);
@@ -42,12 +52,41 @@ void ULoginWidget::CreateServer()
 {
 	int32 playerCnt = FMath::RoundHalfFromZero(sliderPlayerCount->GetValue());
 
-	gameInstance->CreateMySession(editText_RoomName->GetText().ToString(), sliderPlayerCount->GetValue());
+	gameInstance->CreateMySession(editText_RoomName->GetText().ToString(), playerCnt);
 }
 
-// ½½¶óÀÌ´õ °ªÀ» ¿òÁ÷ÀÌ´Â ÇÔ¼ö
+// ìŠ¬ë¼ì´ë” ê°’ì„ ì›€ì§ì´ëŠ” í•¨ìˆ˜
 void ULoginWidget::OnMoveSlider(float value)
 {
-	FString num2str =FString::Printf(TEXT("%d"),value);
-	playerCount->SetText(FText::FromString(num2str));
+	int32 newVal = FMath::RoundHalfFromZero(value);
+	playerCount->SetText(FText::AsNumber(newVal));
+}
+
+inline void ULoginWidget::GoCreate()
+{
+	WidgetSwitcher->SetActiveWidgetIndex(2);
+}
+
+inline void ULoginWidget::GoFind()
+{
+	WidgetSwitcher->SetActiveWidgetIndex(3);
+	gameInstance->FindMySession();
+}
+
+void ULoginWidget::GoBack()
+{
+	WidgetSwitcher->SetActiveWidgetIndex(1);
+}
+
+//ê²Œì„ ì¸ìŠ¤í„´ìŠ¤ë¡œë¶€í„° ê²€ìƒ‰ ì™„ë£Œ ì´ë²¤íŠ¸ë¥¼ ë°›ì•˜ì„ ë•Œ ì‹¤í–‰ë  í•¨ìˆ˜
+void ULoginWidget::AddNewSlot(FString roomName, int32 currentPlayers, int32 maxPlayers, int32 ping)
+{
+	USessionSlotWidget* SlotWidget = CreateWidget<USessionSlotWidget>(this, sessionSlot);
+	if (SlotWidget != nullptr)
+	{
+		SlotWidget->text_roomName->SetText(FText::FromString(roomName));
+		SlotWidget->text_playerInfo->SetText(FText::FromString(FString::Printf(TEXT("%d/%d"),currentPlayers, maxPlayers)));
+		SlotWidget->text_ping->SetText(FText::FromString(FString::Printf(TEXT("%d ms"), ping)));
+		sbox_Roomlist->AddChild(SlotWidget);
+	}
 }

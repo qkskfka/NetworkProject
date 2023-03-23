@@ -26,6 +26,20 @@ public:
 		class UButton* buttonCreateSession;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
 		class UWidgetSwitcher* WidgetSwitcher;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
+		class UButton*btn_GoCreate;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
+		class UButton*btn_GoFind;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
+		class UButton*btn_CreateBack;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
+		class UButton*btn_FindBack;
+	
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, meta = (BindWidget))
+		class UScrollBox*sbox_Roomlist;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class USessionSlotWidget> sessionSlot;
 
 protected:
 	virtual void NativeConstruct() override;
@@ -41,4 +55,19 @@ private:
 
 	UFUNCTION()
 	void OnMoveSlider(float value);
+
+	UFUNCTION()
+	void GoCreate();
+
+	UFUNCTION()
+	void GoFind();
+
+	UFUNCTION()
+	void GoBack();
+
+	UFUNCTION()
+	void AddNewSlot(FString roomName, int32 currentPlayers, int32 maxPlayers, int32 ping);
+	
 };
+
+
