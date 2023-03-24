@@ -10,9 +10,21 @@
 /**
  * 
  */
+USTRUCT()
+struct FSessionInfo
+{
+	GENERATED_BODY()
+	FString roomName;
+	int32 currentPlayers;
+	int32 maxPlayers;
+	int32 ping;
+	int32 idx;
+	
+};
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnSearchResult, FString, roomName, int32, currentPlayers, int32, maxPlayers, int32, ping);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSearchResult, FSessionInfo, SessionInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSearchFinished);
 
 UCLASS()
 class NETWORKPROJECT_API UServerGameInstance : public UGameInstance
@@ -28,19 +40,25 @@ public:
 	FName sessionID;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 	FOnSearchResult SearchResultDele;
+	FOnSearchFinished SearchFinishedDele;
 	
 	// 함수
 	void CreateMySession(FString roomName, int32 playerCount);
 	void FindMySession();
+	void joinMySession(int32 sessionIdx);
 
 	UFUNCTION()
 	void OnCreateSessionComplete(FName sessionName,bool bisSuccess);
 
 	UFUNCTION()
 	void OnFindSessionComplete(bool bWasSuccessful);
+
+	
+	void OnJoinSessionComplete(FName sessionName, enum EOnJoinSessionCompleteResult::Type joinResult);
 	
 	
 };
+
 
 
 

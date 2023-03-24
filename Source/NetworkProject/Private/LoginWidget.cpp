@@ -28,12 +28,14 @@ void ULoginWidget::NativeConstruct()
 	btn_GoFind->OnClicked.AddDynamic(this, &ULoginWidget::GoFind);
 	btn_CreateBack->OnClicked.AddDynamic(this, &ULoginWidget::GoBack);
 	btn_FindBack->OnClicked.AddDynamic(this, &ULoginWidget::GoBack);
+	btn_Refresh->OnClicked.AddDynamic(this, &ULoginWidget::Refreshlist);
 	
 	gameInstance = Cast<UServerGameInstance>(GetGameInstance());
 
 	if (gameInstance != nullptr)
 	{
 		gameInstance->SearchResultDele.AddDynamic(this, &ULoginWidget::AddNewSlot);
+		gameInstance->SearchFinishedDele.AddDynamic(this, &ULoginWidget::RefreshEnabled);
 	}
 
 }
@@ -70,7 +72,8 @@ inline void ULoginWidget::GoCreate()
 inline void ULoginWidget::GoFind()
 {
 	WidgetSwitcher->SetActiveWidgetIndex(3);
-	gameInstance->FindMySession();
+	// 추가된 함수를 전부지워준다.
+	Refreshlist();
 }
 
 void ULoginWidget::GoBack()
@@ -79,14 +82,29 @@ void ULoginWidget::GoBack()
 }
 
 //게임 인스턴스로부터 검색 완료 이벤트를 받았을 때 실행될 함수
-void ULoginWidget::AddNewSlot(FString roomName, int32 currentPlayers, int32 maxPlayers, int32 ping)
+void ULoginWidget::AddNewSlot(FSessionInfo SessionInfo)
 {
 	USessionSlotWidget* SlotWidget = CreateWidget<USessionSlotWidget>(this, sessionSlot);
 	if (SlotWidget != nullptr)
 	{
-		SlotWidget->text_roomName->SetText(FText::FromString(roomName));
-		SlotWidget->text_playerInfo->SetText(FText::FromString(FString::Printf(TEXT("%d/%d"),currentPlayers, maxPlayers)));
-		SlotWidget->text_ping->SetText(FText::FromString(FString::Printf(TEXT("%d ms"), ping)));
+		SlotWidget->text_roomName->SetText(FText::FromString(SessionInfo.roomName));
+		SlotWidget->text_playerInfo->SetText(FText::FromString(FString::Printf(TEXT("%d/%d"),SessionInfo.currentPlayers,SessionInfo.maxPlayers)));
+		SlotWidget->text_ping->SetText(FText::FromString(FString::Printf(TEXT("%d ms"), SessionInfo.ping)));
+		SlotWidget->index = SessionInfo.idx;
 		sbox_Roomlist->AddChild(SlotWidget);
 	}
+}
+
+// 세션 리스트를 새로고침 함수
+void ULoginWidget::Refreshlist()
+{
+	sbox_Roomlist->ClearChildren();
+	gameInstance->FindMySession();
+	// 버튼을 누를수 없게 비활성화 시킨다.
+	btn_Refresh->SetIsEnabled(false);
+}
+
+void ULoginWidget::RefreshEnabled()
+{
+	btn_Refresh->SetIsEnabled(true);
 }

@@ -25,4 +25,15 @@ public:
 	
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* text_ping;
+
+	UPROPERTY()
+	int32 index;
+	
+protected:
+	virtual void NativeConstruct() override;
+private:
+	class UServerGameInstance* GameInstance;
+
+	UFUNCTION()
+	void JoinRoom();
 };
