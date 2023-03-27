@@ -9,13 +9,15 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-
-
+#include "DrawDebugHelpers.h"
+#include "Net/UnrealNetwork.h"
 //////////////////////////////////////////////////////////////////////////
 // ANetworkProjectCharacter
 
 ANetworkProjectCharacter::ANetworkProjectCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -64,6 +66,37 @@ void ANetworkProjectCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+}
+
+void ANetworkProjectCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	//상태정보를 출력한다.
+	DrawDebugString(GetWorld(), GetActorLocation(), PrintInfo(), nullptr, FColor::White, 0.0f, true, 1.0f);
+
+	if (HasAuthority())
+	{
+		number++;
+		repnumber++;
+	}
+}
+
+FString ANetworkProjectCharacter::PrintInfo()
+{
+#pragma region RoleInfo
+	FString myLocalRole = UEnum::GetValueAsString<ENetRole>(GetLocalRole());
+	FString myRemoteRole = UEnum::GetValueAsString<ENetRole>(GetRemoteRole());
+	FString myConnection = GetNetConnection() != nullptr ? TEXT("Valid") : TEXT("Invalid");
+	FString myOwner = GetOwner() != nullptr ? GetOwner()->GetName() : TEXT("NO Owner");
+	FString name = this->GetName();
+	FString infoText = FString::Printf(TEXT("Local Role: %s\nRemote Role: %s\nNet Connection: %s\nOwner: %s\nName: %s"), *myLocalRole, *myRemoteRole, *myConnection, *myOwner, *name);
+#pragma endregion
+
+#pragma region RepOrNot
+	//FString infoText = FString::Printf(TEXT("Number: %d\nReplicated Nember: %d"), number, repnumber);
+#pragma endregion
+	return infoText;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -124,6 +157,12 @@ void ANetworkProjectCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ANetworkProjectCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	//DOREPLIFETIME(ANetworkProjectCharacter, repnumber);
+	DOREPLIFETIME_CONDITION(ANetworkProjectCharacter, repnumber, COND_OwnerOnly);
+}
 
 

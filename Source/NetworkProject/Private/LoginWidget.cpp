@@ -31,13 +31,12 @@ void ULoginWidget::NativeConstruct()
 	btn_Refresh->OnClicked.AddDynamic(this, &ULoginWidget::Refreshlist);
 	
 	gameInstance = Cast<UServerGameInstance>(GetGameInstance());
-
+	
 	if (gameInstance != nullptr)
 	{
 		gameInstance->SearchResultDele.AddDynamic(this, &ULoginWidget::AddNewSlot);
 		gameInstance->SearchFinishedDele.AddDynamic(this, &ULoginWidget::RefreshEnabled);
 	}
-
 }
 
 void ULoginWidget::ClickStart()
