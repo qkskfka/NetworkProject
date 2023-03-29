@@ -124,7 +124,6 @@ void UServerGameInstance::OnFindSessionComplete(bool bWasSuccessful)
 			// 슬롯 생성에 필요한 정보를 이벤트로 송출한다.
 			SearchResultDele.Broadcast(searchedSessionInfo);
 		}
-		
 	}
 	else
 	{

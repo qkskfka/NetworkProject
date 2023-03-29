@@ -43,7 +43,6 @@ private:
 	UPROPERTY(ReplicatedUsing = ScreenLog)
 	int32 testNumber = 0;
 
-
 	UPROPERTY(ReplicatedUsing = ChangeColor)
 	FVector matColor;
 

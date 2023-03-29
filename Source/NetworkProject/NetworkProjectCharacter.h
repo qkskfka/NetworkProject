@@ -37,6 +37,9 @@ class ANetworkProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+			class UInputAction* FireAction;
+
 public:
 	ANetworkProjectCharacter();
 	
@@ -48,6 +51,8 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	void Fire();
 			
 
 protected:
@@ -63,6 +68,18 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UFUNCTION(Server, Unreliable, WithValidation)
+	void ServerFire(int32 damage);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastFire(int32 damage);
+
+	UFUNCTION(Client, Unreliable)
+	void ClientFire(int32 damage);
+
+	UPROPERTY(EditDefaultsOnly, Category = MySettings)
+	TSubclassOf<class ABulletActor> BulletFactory;
 
 private:
 	FString PrintInfo();

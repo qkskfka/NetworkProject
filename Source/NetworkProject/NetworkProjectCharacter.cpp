@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
+#include "BulletActor.h"
 //////////////////////////////////////////////////////////////////////////
 // ANetworkProjectCharacter
 
@@ -82,6 +83,8 @@ void ANetworkProjectCharacter::Tick(float DeltaSeconds)
 	}
 }
 
+
+
 FString ANetworkProjectCharacter::PrintInfo()
 {
 #pragma region RoleInfo
@@ -116,6 +119,8 @@ void ANetworkProjectCharacter::SetupPlayerInputComponent(class UInputComponent* 
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ANetworkProjectCharacter::Look);
+		
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ANetworkProjectCharacter::Fire);
 
 	}
 
@@ -157,6 +162,56 @@ void ANetworkProjectCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ANetworkProjectCharacter::Fire()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Query Fire!"));
+	//GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Green, FString("Query Fire!"), true, FVector2D(1.2f));
+	ServerFire(1000);
+}
+
+
+
+// 서버에 요청하는 함수
+void ANetworkProjectCharacter::ServerFire_Implementation(int32 damage)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Server Fire!"));
+	//GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Green, FString("Server Fire!"), true, FVector2D(1.2f));
+
+	/*FActorSpawnParameters param;
+	param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ABulletActor* bullet = GetWorld()->SpawnActor<ABulletActor>(BulletFactory,
+		GetActorLocation() + GetActorForwardVector() * 100, GetActorRotation(), param);*/
+
+	FActorSpawnParameters param;
+	param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ABulletActor* bullet = GetWorld()->SpawnActor<ABulletActor>(BulletFactory,
+		GetActorLocation() + GetActorForwardVector() * 100, GetActorRotation(), param);
+	bullet->SetOwner(this);
+	//bullet->SetOwner(nullptr);
+	//MulticastFire();
+	//ClientFire();
+}
+
+
+bool ANetworkProjectCharacter::ServerFire_Validate(int32 damage)
+{
+	return true;
+}
+
+// 서버로부터 전달되는 함수
+void ANetworkProjectCharacter::MulticastFire_Implementation(int32 damage)
+{
+
+}
+
+void ANetworkProjectCharacter::ClientFire_Implementation(int32 damage)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Client Fire!"));
+	GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Green, FString("Multicast Fire!"), true, FVector2D(1.2f));
+	
+}
+
 void ANetworkProjectCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -164,5 +219,3 @@ void ANetworkProjectCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	//DOREPLIFETIME(ANetworkProjectCharacter, repnumber);
 	DOREPLIFETIME_CONDITION(ANetworkProjectCharacter, repnumber, COND_OwnerOnly);
 }
-
-
