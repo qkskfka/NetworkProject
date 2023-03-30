@@ -12,6 +12,8 @@
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
 #include "BulletActor.h"
+#include "Component/WidgetComponent.h"
+#include "PlayerInfoWidget.h"
 //////////////////////////////////////////////////////////////////////////
 // ANetworkProjectCharacter
 
@@ -50,8 +52,9 @@ ANetworkProjectCharacter::ANetworkProjectCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	playerInfoUI = CreateDefaultSubobject<UWidgetComponent>(TEXT("Player"));
+	playerInfoUI = SetupAttachment(GetMesh());
+
 }
 
 void ANetworkProjectCharacter::BeginPlay()
@@ -67,6 +70,12 @@ void ANetworkProjectCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+	if (HasAuthority())
+	{
+		SetHealth(maxHP);
+	}
+
+	infoWidget = Cast<UPlayerInfoWidget>(playerInfoUI->GetWidget());
 }
 
 void ANetworkProjectCharacter::Tick(float DeltaSeconds)
@@ -82,7 +91,6 @@ void ANetworkProjectCharacter::Tick(float DeltaSeconds)
 		repnumber++;
 	}
 }
-
 
 
 FString ANetworkProjectCharacter::PrintInfo()
@@ -212,10 +220,29 @@ void ANetworkProjectCharacter::ClientFire_Implementation(int32 damage)
 	
 }
 
+void ANetworkProjectCharacter::SetHealth(int32 value)
+{
+	curHP = FMath::Min(maxHP, value);
+}
+
+void ANetworkProjectCharacter::AddHealth(int32 value)
+{
+	curHP = FMath::Clamp(curHP + value, 0, maxHP);
+}
+
+void ANetworkProjectCharacter::DamageProcess(int32 value)
+{
+	AddHealth(value);
+}
+
 void ANetworkProjectCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	//DOREPLIFETIME(ANetworkProjectCharacter, repnumber);
-	DOREPLIFETIME_CONDITION(ANetworkProjectCharacter, repnumber, COND_OwnerOnly);
+	//DOREPLIFETIME_CONDITION(ANetworkProjectCharacter, repnumber, COND_OwnerOnly);
+
+	DOREPLIFETIME(ANetworkProjectCharacter, curHP);
+	DOREPLIFETIME(ANetworkProjectCharacter, ammo);
+	DOREPLIFETIME(ANetworkProjectCharacter, myName);
 }

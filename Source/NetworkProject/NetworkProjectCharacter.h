@@ -21,6 +21,9 @@ class ANetworkProjectCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 	
+	UPROPERTY(VisibleAnywhere)
+	class UMainWidget* playerInfoUI;
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -37,8 +40,8 @@ class ANetworkProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
-		UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-			class UInputAction* FireAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* FireAction;
 
 public:
 	ANetworkProjectCharacter();
@@ -81,6 +84,30 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = MySettings)
 	TSubclassOf<class ABulletActor> BulletFactory;
 
+	UPROPERTY(EditDefaultsOnly,Category = MySettings)
+	int32 maxHP = 100;
+
+	UPROPERTY(EditDefaultsOnly,Replicated,Category = MySettings)
+	int32 curHP;
+
+	UPROPERTY(EditDefaultsOnly,Replicated, Category = MySettings)
+	int32 ammo;
+
+	UPROPERTY(VisibleDefaultsOnly,Category = MySettings)
+	class UPlayerInfoWidget* infoWidget;
+
+	UFUNCTION()
+	void SetHealth(int32 value);
+
+	UFUNCTION()
+	void AddHealth(int32 value);
+
+	UFUNCTION(Server, Unreliable)
+	void DamageProcess(int32 value);
+
+	FORCEINLINE int32 GetHealth() { return curHP; };
+	FORCEINLINE int32 GetAmmo() { return ammo; };
+
 private:
 	FString PrintInfo();
 
@@ -88,5 +115,9 @@ private:
 
 	UPROPERTY(Replicated)
 	int32 repnumber;
+
+	UPROPERTY(Replicated)
+	FString myName;
+
 };
 

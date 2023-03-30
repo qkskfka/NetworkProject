@@ -42,4 +42,7 @@ public:
 	
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastSpawnEffect();
+
+	UPROPERTY(EditAnywhere, Category = BlueSettings)
+	float damage = 10; 
 };

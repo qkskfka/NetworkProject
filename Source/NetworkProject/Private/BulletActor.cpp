@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "../"
 // Sets default values
 ABulletActor::ABulletActor()
 {
@@ -19,6 +20,8 @@ ABulletActor::ABulletActor()
 	meshComp->SetupAttachment(RootComponent);
 	meshComp->SetWorldScale3D(FVector(0.3f));
 	meshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	damage = 10;
 }
 
 // Called when the game starts or when spawned
@@ -47,6 +50,7 @@ void ABulletActor::OnOverlap(UPrimitiveComponent* OverlappedComponent,
 	// 부딫히면 불꽃 이펙트를 출력한 다음 제거한다
 	
 	ServerSpawnEffect();
+	
 }
 
 void ABulletActor::ServerSpawnEffect_Implementation()

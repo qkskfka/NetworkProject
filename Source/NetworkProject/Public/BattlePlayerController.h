@@ -13,5 +13,10 @@ UCLASS()
 class NETWORKPROJECT_API ABattlePlayerController : public APlayerController
 {
 	GENERATED_BODY()
-	
+protected:
+	virtual void BeginPlay() override;
+
+public:
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UMainWidget> mainWidget;
 };
